@@ -7,7 +7,7 @@ st.title("📈 IBD 142 Industry Group Rankings")
 st.markdown("매일 업데이트되는 IBD 인더스트리 그룹 최신 1위 종목 트래커")
 
 # 구글 드라이브 엑셀 파일 직접 다운로드 URL 
-FILE_ID = "여기에_메모해둔_파일_ID를_붙여넣으세요"
+FILE_ID = "1YF3-C7EctvlE4kAUtaOJxKt0lMZ_rBzE"
 excel_url = f"https://drive.google.com/uc?id={FILE_ID}&export=download"
 
 @st.cache_data(ttl=600) # 10분 단위 데이터 캐싱 (서버 부하 방지)
