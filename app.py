@@ -8,7 +8,7 @@ st.title("📈 IBD 142 Industry Group Rankings")
 st.markdown("매일 업데이트되는 IBD 인더스트리 그룹 최신 1위 종목 트래커")
 
 # 💡 '본인아이디'와 '저장소이름'을 깃허브 주소에 맞게 변경하세요.
-excel_url = "https://raw.githubusercontent.com/본인아이디/저장소이름/main/IBD_Updated_Top1_Groups.xlsx"
+excel_url = "https://raw.githubusercontent.com/hjlee0421/ibd_top/main/IBD_Updated_Top1_Groups.xlsx"
 
 @st.cache_data(ttl=600)
 def load_data():
