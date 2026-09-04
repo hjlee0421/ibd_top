@@ -11,7 +11,10 @@ def setup_driver():
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
-    driver = uc.Chrome(options=options)
+    # driver = uc.Chrome(options=options)
+    # 💡 version_main=151 파라미터를 추가하여 버전을 강제로 맞춥니다.
+    driver = uc.Chrome(options=options, version_main=151) 
+
     return driver
 
 def update_ibd_top_tickers(excel_path):
