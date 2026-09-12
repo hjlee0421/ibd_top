@@ -3,18 +3,35 @@ import random
 import pandas as pd
 import undetected_chromedriver as uc
 from bs4 import BeautifulSoup
+import subprocess  # 💡 추가: 시스템 명령어 실행을 위한 라이브러리
+import re          # 💡 추가: 문자열에서 숫자만 추출하기 위한 라이브러리
+
+def get_chrome_major_version():
+    """리눅스 서버에 설치된 구글 크롬의 메이저 버전을 자동 추출합니다."""
+    try:
+        # 서버에 "구글 크롬 버전이 뭐야?"라고 명령어를 날려 답변을 받아옴
+        result = subprocess.run(['google-chrome', '--version'], capture_output=True, text=True)
+        
+        # 답변(예: "Google Chrome 153.0.8010.36")에서 메이저 숫자('153')만 정규식으로 추출
+        match = re.search(r"Google Chrome (\d+)", result.stdout)
+        if match:
+            return int(match.group(1))
+    except Exception:
+        pass
+    return 153 # 감지 실패 시 사용할 임시 기본값
 
 def setup_driver():
     options = uc.ChromeOptions()
-    # 깃허브 액션 리눅스 서버 필수 설정
     options.add_argument('--headless=new')
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
-    # driver = uc.Chrome(options=options)
-    # 💡 version_main=151 파라미터를 추가하여 버전을 강제로 맞춥니다.
-    driver = uc.Chrome(options=options, version_main=151) 
-
+    
+    # 💡 고정된 숫자를 지우고, 위에서 만든 자동 감지 함수를 연결
+    dynamic_version = get_chrome_major_version()
+    print(f"🔍 서버 크롬 버전 자동 감지 완료: {dynamic_version}")
+    
+    driver = uc.Chrome(options=options, version_main=dynamic_version)
     return driver
 
 def update_ibd_top_tickers(excel_path):
