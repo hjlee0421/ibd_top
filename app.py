@@ -3,7 +3,9 @@ import pandas as pd
 import requests
 import io
 import re
+from html import escape
 from pathlib import Path
+from urllib.parse import urlparse
 
 st.set_page_config(page_title="IBD 142 Group Rankings", layout="wide")
 st.title("📈 IBD 142 Industry Group Rankings")
@@ -39,6 +41,7 @@ try:
     
     df.columns = [re.sub(r"\s+", " ", str(column)).strip() for column in df.columns]
     df.rename(columns={"INDUSTRY GROUP RANKING": "RANK", "RANK CHANGE": "CHANGE", "PREV RANK": "PREV"}, inplace=True)
+    stock_urls = df["1위_주소"].copy() if "1위_주소" in df.columns else pd.Series("", index=df.index)
     if "1위_주소" in df.columns:
         df.drop(columns=["1위_주소"], inplace=True)
         
@@ -54,6 +57,35 @@ try:
         """
         <style>
         .st-key-mobile_layout { display: none; }
+        .st-key-mobile_layout [data-testid="stElementContainer"]:has(.stock-card) {
+            margin-bottom: 0.65rem;
+            border: 1px solid rgba(128, 128, 128, 0.35);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .stock-card {
+            display: block;
+            box-sizing: border-box;
+            padding: 0.75rem;
+            color: inherit !important;
+            text-decoration: none !important;
+        }
+        .stock-card:active { background: rgba(128, 128, 128, 0.12); }
+        .stock-card:focus-visible {
+            outline: 3px solid #1e90ff;
+            outline-offset: -3px;
+        }
+        .stock-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 0.75rem;
+        }
+        .stock-card-rank { font-size: 1.2rem; font-weight: 700; }
+        .stock-card-change { text-align: right; }
+        .stock-card-main { margin-top: 0.45rem; }
+        .stock-card-ticker { font-weight: 700; }
+        .stock-card-sector { margin-top: 0.3rem; opacity: 0.72; font-size: 0.9rem; }
         @media (max-width: 640px) {
             .st-key-desktop_layout { display: none; }
             .st-key-mobile_layout { display: block; }
@@ -64,21 +96,38 @@ try:
     )
 
     with st.container(key="mobile_layout"):
-        st.caption(f"총 {len(df)}개 그룹")
-        for _, row in df.iterrows():
+        mobile_rows = df[df["1위_티커"].notna() & df["1위_티커"].astype(str).str.strip().ne("")]
+        st.caption(f"총 {len(mobile_rows)}개 그룹")
+        for _, row in mobile_rows.iterrows():
             rank = "-" if pd.isna(row.get("RANK")) else int(row["RANK"])
             previous_rank = "-" if pd.isna(row.get("PREV")) else int(row["PREV"])
             change = "-" if pd.isna(row.get("CHANGE")) else str(row["CHANGE"])
             ticker = row.get("1위_티커", "-")
             group_name = row.get("INDUSTRY GROUP", "-")
             sector = row.get("SECTOR", "-")
+            stock_url = str(stock_urls.get(row.name, "")).strip()
+            parsed_url = urlparse(stock_url)
+            safe_url = stock_url if parsed_url.scheme in ("http", "https") and parsed_url.netloc else ""
 
-            with st.container(border=True):
-                rank_col, change_col = st.columns([1, 2])
-                rank_col.markdown(f"### #{rank}")
-                change_col.markdown(f"**변동 {change}** · 이전 #{previous_rank}")
-                st.markdown(f"**{ticker}** · {group_name}")
-                st.caption(sector)
+            card_content = (
+                f'<div class="stock-card-header">'
+                f'<span class="stock-card-rank">#{escape(str(rank))}</span>'
+                f'<span class="stock-card-change">변동 {escape(change)} · 이전 #{escape(str(previous_rank))}</span>'
+                f'</div>'
+                f'<div class="stock-card-main"><span class="stock-card-ticker">{escape(str(ticker))}</span>'
+                f' · {escape(str(group_name))}</div>'
+                f'<div class="stock-card-sector">{escape(str(sector))}</div>'
+            )
+            if safe_url:
+                link_label = escape(f"{ticker} {group_name} 종목 정보", quote=True)
+                card_html = (
+                    f'<a class="stock-card" href="{escape(safe_url, quote=True)}" '
+                    f'target="_blank" rel="noopener noreferrer" aria-label="{link_label}">'
+                    f'{card_content}</a>'
+                )
+            else:
+                card_html = f'<div class="stock-card">{card_content}</div>'
+            st.markdown(card_html, unsafe_allow_html=True)
 
     with st.container(key="desktop_layout"):
         styled_df = df.style.map(color_rank_change, subset=['CHANGE'])
